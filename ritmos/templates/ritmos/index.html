@@ -12,59 +12,65 @@
 
     <h1>Generador de Ritmos <span style="font-size: 0.6em; opacity: 0.7;">(AFD)</span></h1>
 
-    <div class="controls">
-        <div class="control-group">
-            <label for="bpm">BPM</label>
-            <input type="number" id="bpm" value="80" min="40" max="240">
-        </div>
-        
-        <div class="control-group">
-            <label for="measures">Compases</label>
-            <input type="number" id="measures" value="2" min="1" max="8">
-        </div>
-        
-        <div class="control-group">
-            <label for="genreSelect">Género</label>
-            <select id="genreSelect">
-                <option value="rock">Rock</option>
-                <option value="reggaeton">Reggaetón</option>
-                <option value="hiphop">Hip Hop</option>
-            </select>
-        </div>
-        
-        <button id="playButton">▶ Play</button>
-        <button id="stopButton">■ Stop</button>
+    <div class="nav-bar">
+        <button id="tabGenerator" class="nav-btn active">Generador</button>
+        <button id="tabGame" class="nav-btn">Juez de Ritmo</button>
     </div>
 
-    <div class="display-container">
-        <h3>Secuencia Generada</h3>
-        <pre id="sequenceDisplay">Presiona Play para generar...</pre>
-    </div>
-    <div class="controls game-panel">
-        <h2>Juez de Ritmo (Modo Juego)</h2>
-        <p style="font-size: 0.9rem; color: #888;">
-            Escucha el Hi-Hat y toca el patrón de Rock: <strong>B ... C ... B ... C</strong>
-        </p>
-
-        <div id="feedbackDisplay" class="feedback-neutral">Presiona "Iniciar Reto"</div>
-
-        <div class="drum-pad-container">
-            <button id="btnSnare" class="drum-pad snare-pad">
-                CAJA (C)
-            </button>
-            <button id="btnKick" class="drum-pad kick-pad">
-                BOMBO (B)
-            </button>
+    <div id="generatorSection" class="section-container">
+        <div class="controls">
+            <div class="control-group">
+                <label for="bpm">BPM</label>
+                <input type="number" id="bpm" value="120" min="40" max="240">
+            </div>
             
+            <div class="control-group">
+                <label for="measures">Compases</label>
+                <input type="number" id="measures" value="2" min="1" max="8">
+            </div>
+            
+            <div class="control-group">
+                <label for="genreSelect">Género</label>
+                <select id="genreSelect">
+                    <option value="rock">Rock</option>
+                    <option value="reggaeton">Reggaetón</option>
+                    <option value="hiphop">Hip Hop</option>
+                </select>
+            </div>
+            
+            <button id="playButton">▶ Play</button>
+            <button id="stopButton">■ Stop</button>
         </div>
 
-        <button id="startGameButton" style="background-color: var(--accent-color); width: 100%; margin-top: 20px;">
-             Iniciar Reto
-        </button>
-        <button id="stopGameButton" style="background-color: var(--stop-color); width: 100%; margin-top: 10px; display: none;">
-            Terminar
-        </button>
+        <div class="display-container">
+            <h3>Secuencia Generada</h3>
+            <pre id="sequenceDisplay">Presiona Play para generar...</pre>
+        </div>
     </div>
+
+    <div id="gameSection" class="section-container" style="display: none;">
+        <div class="controls game-panel">
+            <h2>Juez de Ritmo (Modo Juego)</h2>
+            <p style="font-size: 0.9rem; color: #888;">
+                Escucha el Hi-Hat y toca el patrón de Rock: <strong>B ... C ... B ... C</strong>
+            </p>
+
+            <div id="feedbackDisplay" class="feedback-neutral">Presiona "Iniciar Reto"</div>
+
+            <div class="drum-pad-container">
+                <button id="btnKick" class="drum-pad kick-pad">BOMBO (B)</button>
+                <button id="btnSnare" class="drum-pad snare-pad">CAJA (C)</button>
+            </div>
+
+            <button id="startGameButton" style="background-color: var(--accent-color); width: 100%; margin-top: 20px;">
+                 Iniciar Reto
+            </button>
+            <button id="stopGameButton" style="background-color: var(--stop-color); width: 100%; margin-top: 10px; display: none;">
+                Terminar
+            </button>
+        </div>
+    </div>
+
     <script>
         window.STATIC_URL = "{% static '' %}";
     </script>

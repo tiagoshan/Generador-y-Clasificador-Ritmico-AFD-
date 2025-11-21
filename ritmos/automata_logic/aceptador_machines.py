@@ -1,5 +1,3 @@
-# ritmos/automata_logic/aceptador_machines.py
-
 from .automata_base import AutomataAceptador
 from .genre_configs import (
     DELTA_ROCK_ACEPTADOR, 
@@ -8,10 +6,10 @@ from .genre_configs import (
 )
 
 class RockAceptador(AutomataAceptador):
-    """
-    AFD que reconoce patrones de Rock.
-    Patrón Clave: Bombo ... Caja ... Bombo ... Caja
-    """
+    
+    # AFD que reconoce patrones de Rock.
+
+    
     def __init__(self):
         super().__init__(
             delta=DELTA_ROCK_ACEPTADOR,
