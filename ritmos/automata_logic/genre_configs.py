@@ -94,6 +94,35 @@ LAMBDA_HIPHOP_FILL = [
     CAJA,        # q14
     SILENCIO     # q15
 ]
+LAMBDA_CUMBIA = [
+    HIHAT_BOMBO, # q0  (Tiempo 1)
+    SILENCIO,    # q1
+    HIHAT,       # q2  (chi)
+    SILENCIO,    # q3
+    
+    HIHAT_CAJA,  # q4  (Tiempo 2 - Contratiempo fuerte)
+    SILENCIO,    # q5
+    HIHAT,       # q6  (chi)
+    SILENCIO,    # q7
+    
+    HIHAT_BOMBO, # q8  (Tiempo 3)
+    SILENCIO,    # q9
+    HIHAT,       # q10 (chi)
+    SILENCIO,    # q11
+    
+    HIHAT_CAJA,  # q12 (Tiempo 4)
+    SILENCIO,    # q13
+    HIHAT,       # q14 (chi)
+    SILENCIO     # q15
+]
+
+# Un repique clásico de timbal (usando caja)
+LAMBDA_CUMBIA_FILL = [
+    CAJA,        # q12
+    HIHAT,       # q13
+    CAJA,        # q14
+    HIHAT        # q15
+]
 
 Q_ROCK_0 = 'q0'      # Esperando 1er Bombo
 Q_ROCK_1 = 'q1'      # Vio Bombo, esperando Caja

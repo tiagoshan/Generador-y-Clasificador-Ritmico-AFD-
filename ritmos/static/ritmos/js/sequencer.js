@@ -255,7 +255,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // bpm por género
     const genreSelect = document.getElementById('genreSelect');
-    const bpmPorGenero = { 'rock': 120, 'reggaeton': 90, 'hiphop': 85 };
+    const bpmPorGenero = { 'rock': 120, 'reggaeton': 90, 'hiphop': 85, 'cumbia': 100 };
 
     if(genreSelect) {
         genreSelect.addEventListener('change', function() {
