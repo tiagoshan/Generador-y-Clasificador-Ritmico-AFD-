@@ -1,0 +1,296 @@
+// ritmos/static/ritmos/js/sequencer.js
+
+// ==========================================
+// 1. CONFIGURACIÓN Y VARIABLES GLOBALES
+// ==========================================
+
+let audioContext = null;
+let audioBuffers = {};
+let isPlaying = false;
+let proximoTiempoDeNota = 0.0;
+let indiceNotaActual = 0;
+let secuenciaActual = [];
+let bpm = 120.0;
+let timerID = null;
+
+const RUTA_SONIDOS = window.STATIC_URL + 'ritmos/sounds/';
+
+// ==========================================
+// 2. MOTOR DE AUDIO (Web Audio API)
+// ==========================================
+
+async function cargarSonido(url, simbolo) {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    try {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        audioBuffers[simbolo] = audioBuffer;
+        console.log(`Sonido ${simbolo} cargado.`);
+    } catch (e) {
+        console.error(`Error cargando sonido ${simbolo}:`, e);
+    }
+}
+
+async function precargarSonidos() {
+    console.log("Precargando sonidos...");
+    try {
+        await cargarSonido(RUTA_SONIDOS + 'B.wav', 'B');
+        await cargarSonido(RUTA_SONIDOS + 'C.wav', 'C');
+        await cargarSonido(RUTA_SONIDOS + 'H.wav', 'H');
+        console.log("¡Sonidos listos!");
+    } catch (e) {
+        console.error("Error fatal en precarga:", e);
+    }
+}
+
+function reproducirSonido(simbolo) {
+    if (!audioBuffers[simbolo] || !audioContext) return;
+    
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffers[simbolo];
+    source.connect(audioContext.destination);
+    source.start(0);
+}
+
+// ==========================================
+// 3. SECUENCIADOR (GENERADOR AUTOMÁTICO)
+// ==========================================
+
+function programador() {
+    while (proximoTiempoDeNota < audioContext.currentTime + 0.1) {
+        const simbolo = secuenciaActual[indiceNotaActual];
+        
+        if (simbolo && simbolo !== '-') {
+            if (simbolo.length > 1) {
+                for (let i = 0; i < simbolo.length; i++) {
+                    reproducirSonido(simbolo[i]);
+                }
+            } else {
+                reproducirSonido(simbolo);
+            }
+        }
+        
+        // Usa la variable global 'bpm'
+        const duracionSemicorchea = (60.0 / bpm) / 4.0;
+        proximoTiempoDeNota += duracionSemicorchea;
+        
+        indiceNotaActual = (indiceNotaActual + 1) % secuenciaActual.length;
+    }
+    timerID = window.setTimeout(programador, 25.0);
+}
+
+async function play() {
+    if (isPlaying) return;
+    if (typeof stopGame === "function" && isGaming) stopGame();
+
+    if (!audioContext) await precargarSonidos();
+    if (audioContext.state === 'suspended') await audioContext.resume();
+    
+    isPlaying = true;
+
+    // Actualizar BPM desde la interfaz
+    bpm = document.getElementById('bpm').value;
+    const compases = document.getElementById('measures').value;
+    const genero = document.getElementById('genreSelect').value; 
+
+    const display = document.getElementById('sequenceDisplay');
+    display.textContent = "Generando...";
+
+    try {
+        const response = await fetch(`/api/generate/${genero}/${compases}/`);
+        const data = await response.json();
+        
+        if (data.error) {
+            display.textContent = data.error;
+            isPlaying = false;
+            return;
+        }
+
+        secuenciaActual = data.sequence;
+        display.textContent = secuenciaActual.join(" - ");
+
+        indiceNotaActual = 0;
+        proximoTiempoDeNota = audioContext.currentTime;
+        programador();
+
+    } catch (e) {
+        console.error(e);
+        display.textContent = "Error de conexión.";
+        isPlaying = false;
+    }
+}
+
+function stop() {
+    isPlaying = false;
+    window.clearTimeout(timerID);
+}
+
+// ==========================================
+// 4. JUEZ INTERACTIVO (MODO JUEGO)
+// ==========================================
+
+let isGaming = false;
+let gameStep = 0;
+let gameNextNoteTime = 0.0;
+let gameTimerID = null;
+
+const TARGET_PATTERN = [
+    'B', null, null, null,
+    'C', null, null, null,
+    'B', null, null, null,
+    'C', null, null, null
+];
+
+function gameLoop() {
+    while (gameNextNoteTime < audioContext.currentTime + 0.1) {
+        
+        // --- CAMBIO AQUÍ ---
+        // Solo tocamos el Hi-Hat si el paso es PAR (0, 2, 4...)
+        // Esto deja una semicorchea de silencio (la impar) en medio.
+        if (gameStep % 2 === 0) {
+            reproducirSonido('H');
+        }
+        // -------------------
+
+        // 2. Actualizar paso
+        gameStep = (gameStep + 1) % 16;
+
+        // 3. Avanzar tiempo
+        const secondsPerStep = (60.0 / bpm) / 4.0; 
+        gameNextNoteTime += secondsPerStep;
+    }
+    gameTimerID = setTimeout(gameLoop, 25);
+}
+
+function checkHit(instrumentoTocado) {
+    if (!isGaming) return;
+    reproducirSonido(instrumentoTocado);
+
+    const feedbackEl = document.getElementById('feedbackDisplay');
+    let stepEvaluado = (gameStep === 0) ? 15 : gameStep - 1; 
+    const esperado = TARGET_PATTERN[stepEvaluado];
+
+    if (esperado === instrumentoTocado) {
+        feedbackEl.textContent = "¡BIEN! 😎";
+        feedbackEl.className = "feedback-good";
+    } else {
+        if (esperado === null) {
+            feedbackEl.textContent = "¡A DESTIEMPO! ⚠️";
+        } else {
+            feedbackEl.textContent = "¡MAL! ❌";
+        }
+        feedbackEl.className = "feedback-bad";
+    }
+}
+
+function startGame() {
+    if (isGaming) return;
+    if (isPlaying) stop();
+
+    if (!audioContext) precargarSonidos();
+    if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+
+    isGaming = true;
+    gameStep = 15;
+    gameNextNoteTime = audioContext.currentTime;
+    
+    // --- CAMBIO AQUÍ: PREDETERMINADO BAJO ---
+    // Ponemos el BPM en 60 (Lento) para empezar fácil
+    bpm = 30;
+    document.getElementById('bpm').value = bpm; // Actualizamos la cajita visualmente
+    // ----------------------------------------
+
+    document.getElementById('startGameButton').style.display = 'none';
+    document.getElementById('stopGameButton').style.display = 'block';
+    
+    const fb = document.getElementById('feedbackDisplay');
+    fb.textContent = "¡Sigue el Ritmo!";
+    fb.className = "feedback-neutral";
+    
+    gameLoop();
+}
+
+function stopGame() {
+    isGaming = false;
+    clearTimeout(gameTimerID);
+    document.getElementById('startGameButton').style.display = 'block';
+    document.getElementById('stopGameButton').style.display = 'none';
+    
+    const fb = document.getElementById('feedbackDisplay');
+    fb.textContent = "Juego Terminado";
+    fb.className = "feedback-neutral";
+}
+
+// ==========================================
+// 5. INICIALIZACIÓN DE EVENTOS
+// ==========================================
+
+window.addEventListener('DOMContentLoaded', () => {
+    
+    // Controles Generales
+    const playBtn = document.getElementById('playButton');
+    const stopBtn = document.getElementById('stopButton');
+    const bpmInput = document.getElementById('bpm'); // Referencia al input BPM
+
+    if(playBtn) playBtn.addEventListener('click', play);
+    if(stopBtn) stopBtn.addEventListener('click', stop);
+
+    // --- CAMBIO AQUÍ: Actualizar BPM en tiempo real si el usuario lo cambia ---
+    if(bpmInput) {
+        bpmInput.addEventListener('input', function() {
+            bpm = parseFloat(this.value) || 120; // Actualiza la variable global
+        });
+    }
+
+    // Controles Juego
+    const startInfoBtn = document.getElementById('startGameButton');
+    const stopInfoBtn = document.getElementById('stopGameButton');
+    const btnKick = document.getElementById('btnKick');
+    const btnSnare = document.getElementById('btnSnare');
+
+    if(startInfoBtn) startInfoBtn.addEventListener('click', startGame);
+    if(stopInfoBtn) stopInfoBtn.addEventListener('click', stopGame);
+    
+    if(btnKick) btnKick.addEventListener('mousedown', () => checkHit('B'));
+    if(btnSnare) btnSnare.addEventListener('mousedown', () => checkHit('C'));
+
+    // Teclado
+    // Teclado para el juego
+    window.addEventListener('keydown', (e) => {
+        // 1. Esta línea es la clave:
+        // Si el juego NO ha iniciado (!isGaming), la función se detiene aquí.
+        // Por lo tanto, las teclas B y C no sonarán.
+        if (!isGaming) return;
+
+        // 2. Si el juego SÍ ha iniciado:
+        if (e.key.toLowerCase() === 'b') {
+            checkHit('B'); // Toca Bombo y verifica acierto
+        }
+        if (e.key.toLowerCase() === 'c') {
+            checkHit('C'); // Toca Caja y verifica acierto
+        }
+    });
+
+    // Precarga
+    precargarSonidos().catch(e => console.error(e));
+
+    // BPM Dinámico por Género (Solo afecta al modo Generador cuando cambias el selector)
+    const genreSelect = document.getElementById('genreSelect');
+    const bpmPorGenero = { 'rock': 120, 'reggaeton': 90, 'hiphop': 85 };
+
+    if(genreSelect) {
+        genreSelect.addEventListener('change', function() {
+            const val = this.value;
+            if (bpmPorGenero[val]) {
+                bpmInput.value = bpmPorGenero[val];
+                bpm = bpmPorGenero[val]; // Actualizamos también la variable global
+                
+                bpmInput.style.backgroundColor = '#333';
+                setTimeout(() => bpmInput.style.backgroundColor = '', 200);
+            }
+        });
+    }
+});
