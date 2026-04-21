@@ -134,19 +134,39 @@ h3 {
 
 #sequenceDisplay {
     background-color: #000;
-    color: var(--accent-color);
+    color: #444;
     font-family: var(--font-mono);
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #333;
     font-size: 1.2rem;
-    white-space: pre-wrap; 
+    white-space: pre-wrap;
     word-wrap: break-word;
     box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
     min-height: 60px;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
+    gap: 4px;
+    row-gap: 10px;
+}
+
+.step {
+    color: #333;
+    transition: color 0.06s, text-shadow 0.06s;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.step.active {
+    color: #fff;
+    text-shadow: 0 0 10px var(--accent-color), 0 0 3px var(--accent-color);
+}
+
+.step-sep {
+    color: #222;
+    user-select: none;
 }
 
 .game-panel {
@@ -241,6 +261,11 @@ h3 {
 }
 
 
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+}
+
 .section-container {
     animation: fadeIn 0.4s ease;
     width: 100%;
@@ -248,3 +273,127 @@ h3 {
     flex-direction: column;
     align-items: center;
 }
+
+/* ── Clasificador ─────────────────────────────────────────────── */
+
+.classify-container {
+    margin-top: 16px;
+    width: 90%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.classify-btn {
+    background-color: #7c4dff;
+    color: white;
+    box-shadow: 0 0 10px rgba(124, 77, 255, 0.4);
+    width: 100%;
+    max-width: 280px;
+}
+
+.classify-btn:hover { filter: brightness(1.15); }
+.classify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.classify-result {
+    background-color: var(--panel-color);
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 14px 20px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    display: none;
+}
+
+.classify-result.classify-loading,
+.classify-result.classify-found,
+.classify-result.classify-unknown,
+.classify-result.classify-error { display: block; }
+
+.classify-found  { border-color: #7c4dff; color: #ce93d8; }
+.classify-unknown { border-color: #ff9800; color: #ffcc80; }
+.classify-error  { border-color: var(--stop-color); color: var(--stop-color); }
+.classify-loading { color: #888; }
+
+.match-yes { color: #00e676; font-weight: bold; }
+.match-no  { color: #555; }
+
+/* ── Score del juego ──────────────────────────────────────────── */
+
+.score-display {
+    font-size: 1rem;
+    color: var(--accent-color);
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
+
+kbd {
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+}
+
+/* ── Juez de Ritmo ────────────────────────────────────────── */
+
+.game-settings {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.game-pattern-display {
+    display: flex;
+    gap: 5px;
+    background: #000;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 90%;
+    max-width: 520px;
+    margin-top: 8px;
+    min-height: 68px;
+    align-items: center;
+}
+
+.game-step {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-weight: bold;
+    font-size: 0.85rem;
+    border: 1px solid #1a1a1a;
+    transition: transform 0.06s, box-shadow 0.06s;
+}
+
+.game-step.empty   { color: #2a2a2a; background: #0a0a0a; }
+.game-step.target-b { color: #00e676; background: #061a0e; border-color: #00e676; }
+.game-step.target-c { color: #00bcd4; background: #061519; border-color: #00bcd4; }
+
+.game-step.active          { transform: scale(1.2); box-shadow: 0 0 10px currentColor; }
+.game-step.empty.active    { color: #333; border-color: #333; }
+
+.game-bpm-display {
+    font-size: 0.85rem;
+    color: #888;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    transition: color 0.3s;
+}
+
+.feedback-perfect { background-color: #ffd600; color: #000; animation: pop 0.2s; }

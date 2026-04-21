@@ -95,62 +95,104 @@ LAMBDA_HIPHOP_FILL = [
     SILENCIO     # q15
 ]
 LAMBDA_CUMBIA = [
-    HIHAT_BOMBO, # q0  (Tiempo 1)
+    BOMBO,       # q0  (Tiempo 1 - bombo seco, sin hi-hat: sonido grave abierto)
     SILENCIO,    # q1
-    HIHAT,       # q2  (chi)
+    HIHAT,       # q2
     SILENCIO,    # q3
-    
-    HIHAT_CAJA,  # q4  (Tiempo 2 - Contratiempo fuerte)
+
+    HIHAT_CAJA,  # q4  (Contratiempo fuerte: caja + hi-hat)
     SILENCIO,    # q5
-    HIHAT,       # q6  (chi)
+    HIHAT,       # q6
     SILENCIO,    # q7
-    
-    HIHAT_BOMBO, # q8  (Tiempo 3)
+
+    BOMBO,       # q8  (Tiempo 3 - bombo seco)
     SILENCIO,    # q9
-    HIHAT,       # q10 (chi)
+    HIHAT,       # q10
     SILENCIO,    # q11
-    
-    HIHAT_CAJA,  # q12 (Tiempo 4)
+
+    HIHAT_CAJA,  # q12 (Contratiempo fuerte)
     SILENCIO,    # q13
-    HIHAT,       # q14 (chi)
+    HIHAT,       # q14
     SILENCIO     # q15
 ]
 
-# Un repique clásico de timbal (usando caja)
+# Repique de timbal colombiano
 LAMBDA_CUMBIA_FILL = [
     CAJA,        # q12
-    HIHAT,       # q13
+    BOMBO,       # q13
     CAJA,        # q14
-    HIHAT        # q15
+    BOMBO        # q15
 ]
 
-Q_ROCK_0 = 'q0'      # Esperando 1er Bombo
-Q_ROCK_1 = 'q1'      # Vio Bombo, esperando Caja
-Q_ROCK_2 = 'q2'      # Vio Caja, esperando 2do Bombo
-Q_ROCK_3 = 'q3'      # Vio 2do Bombo, esperando Caja final
-Q_ROCK_F = 'q_fin'   # Aceptado
+# ── Rock Aceptador ──────────────────────────────────────────────────────────
+# Reconoce: HB → HC → HB → HC  (bombo+hat y caja+hat siempre juntos)
+# Si aparece un bombo seco (B) entre HB y HC, es estado muerto (no es rock).
 
-# Transiciones (Delta)
-# Solo se define las transiciones que avanzan
-# La clase base ignorará lo demás 
+Q_ROCK_0    = 'q0'
+Q_ROCK_1    = 'q1'
+Q_ROCK_2    = 'q2'
+Q_ROCK_3    = 'q3'
+Q_ROCK_F    = 'q_fin'
+_Q_ROCK_DEAD = 'q_dead'
+
 DELTA_ROCK_ACEPTADOR = {
-    Q_ROCK_0: {
-        BOMBO: Q_ROCK_1,       # B -> avanza
-        HIHAT_BOMBO: Q_ROCK_1  # HB -> avanza
-    },
-    Q_ROCK_1: {
-        CAJA: Q_ROCK_2,
-        HIHAT_CAJA: Q_ROCK_2
-    },
-    Q_ROCK_2: {
-        BOMBO: Q_ROCK_3,
-        HIHAT_BOMBO: Q_ROCK_3
-    },
-    Q_ROCK_3: {
-        CAJA: Q_ROCK_F,
-        HIHAT_CAJA: Q_ROCK_F
-    },
-    Q_ROCK_F: {
+    Q_ROCK_0:    {HIHAT_BOMBO: Q_ROCK_1},
+    Q_ROCK_1:    {HIHAT_CAJA: Q_ROCK_2,  BOMBO: _Q_ROCK_DEAD},
+    Q_ROCK_2:    {HIHAT_BOMBO: Q_ROCK_3},
+    Q_ROCK_3:    {HIHAT_CAJA: Q_ROCK_F,  BOMBO: _Q_ROCK_DEAD},
+    _Q_ROCK_DEAD: {},
+}
 
-    }
+# ── Reggaetón Aceptador ──────────────────────────────────────────────────────
+# Reconoce el dembow: HB → H → C  (kick+hihat, hihat solo, caja sola)
+# Si en lugar de C aparece HC (caja+hat = estilo rock), estado muerto.
+
+Q_REGGAETON_0    = 'q0'
+Q_REGGAETON_1    = 'q1'
+Q_REGGAETON_2    = 'q2'
+Q_REGGAETON_F    = 'q_fin'
+_Q_REGGAETON_DEAD = 'q_dead'
+
+DELTA_REGGAETON_ACEPTADOR = {
+    Q_REGGAETON_0:    {HIHAT_BOMBO: Q_REGGAETON_1},
+    Q_REGGAETON_1:    {HIHAT: Q_REGGAETON_2},
+    Q_REGGAETON_2:    {CAJA: Q_REGGAETON_F, HIHAT_CAJA: _Q_REGGAETON_DEAD},
+    _Q_REGGAETON_DEAD: {},
+}
+
+# ── Hip-Hop Aceptador ────────────────────────────────────────────────────────
+# Reconoce la síncopa: (B|HB) → B → (C|HC)  (doble bombo antes de la caja)
+# Si la caja llega antes del segundo bombo, estado muerto (no es hip-hop).
+
+Q_HIPHOP_0    = 'q0'
+Q_HIPHOP_1    = 'q1'
+Q_HIPHOP_2    = 'q2'
+Q_HIPHOP_F    = 'q_fin'
+_Q_HIPHOP_DEAD = 'q_dead'
+
+DELTA_HIPHOP_ACEPTADOR = {
+    Q_HIPHOP_0:    {BOMBO: Q_HIPHOP_1, HIHAT_BOMBO: Q_HIPHOP_1},
+    Q_HIPHOP_1:    {BOMBO: Q_HIPHOP_2, CAJA: _Q_HIPHOP_DEAD, HIHAT_CAJA: _Q_HIPHOP_DEAD},
+    Q_HIPHOP_2:    {CAJA: Q_HIPHOP_F,  HIHAT_CAJA: Q_HIPHOP_F},
+    _Q_HIPHOP_DEAD: {},
+}
+
+# ── Cumbia Aceptador ─────────────────────────────────────────────────────────
+# Reconoce: B → HC → B → HC  (bombo seco alternado con contratiempo)
+# Si aparece HB (bombo con hat) mientras se rastrea el patrón, estado muerto:
+# la cumbia nunca mezcla bombo con hi-hat en los tiempos principales.
+
+Q_CUMBIA_0    = 'q0'
+Q_CUMBIA_1    = 'q1'
+Q_CUMBIA_2    = 'q2'
+Q_CUMBIA_3    = 'q3'
+Q_CUMBIA_F    = 'q_fin'
+_Q_CUMBIA_DEAD = 'q_dead'
+
+DELTA_CUMBIA_ACEPTADOR = {
+    Q_CUMBIA_0:    {BOMBO: Q_CUMBIA_1},
+    Q_CUMBIA_1:    {HIHAT_CAJA: Q_CUMBIA_2,  HIHAT_BOMBO: _Q_CUMBIA_DEAD},
+    Q_CUMBIA_2:    {BOMBO: Q_CUMBIA_3,        HIHAT_BOMBO: _Q_CUMBIA_DEAD},
+    Q_CUMBIA_3:    {HIHAT_CAJA: Q_CUMBIA_F,   HIHAT_BOMBO: _Q_CUMBIA_DEAD},
+    _Q_CUMBIA_DEAD: {},
 }

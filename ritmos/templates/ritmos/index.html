@@ -35,7 +35,7 @@
                     <option value="rock">Rock</option>
                     <option value="reggaeton">Reggaetón</option>
                     <option value="hiphop">Hip Hop</option>
-                    <!-- <option value="cumbia">Cumbia</option> -->
+                    <option value="cumbia">Cumbia</option>
                 </select>
             </div>
             
@@ -47,24 +47,51 @@
             <h3>Secuencia Generada</h3>
             <pre id="sequenceDisplay">Presiona Play para generar...</pre>
         </div>
+
+        <div class="classify-container" id="classifyContainer" style="display:none;">
+            <button id="classifyButton" class="classify-btn">Clasificar Secuencia</button>
+            <div id="classifyResult" class="classify-result"></div>
+        </div>
     </div>
 
     <div id="gameSection" class="section-container" style="display: none;">
         <div class="controls game-panel">
             <h2>Juez de Ritmo (Modo Juego)</h2>
-            <p style="font-size: 0.9rem; color: #888;">
-                Escucha el Hi-Hat y toca el patrón de Rock: <strong>B ... C ... B ... C</strong>
+
+            <div class="game-settings">
+                <div class="control-group">
+                    <label for="gameGenreSelect">Género</label>
+                    <select id="gameGenreSelect">
+                        <option value="rock">Rock</option>
+                        <option value="reggaeton">Reggaetón</option>
+                        <option value="hiphop">Hip Hop</option>
+                        <option value="cumbia">Cumbia</option>
+                    </select>
+                </div>
+            </div>
+
+            <p style="font-size: 0.9rem; color: #888; margin: 8px 0;">
+                <kbd>B</kbd> = Bombo &nbsp; <kbd>C</kbd> = Caja &nbsp;·&nbsp; el BPM sube cada 2 vueltas
             </p>
+
+            <div id="gamePatternDisplay" class="game-pattern-display"></div>
+
+            <div id="gameBpmDisplay" class="game-bpm-display" style="display:none;"></div>
 
             <div id="feedbackDisplay" class="feedback-neutral">Presiona "Iniciar Reto"</div>
 
+            <div id="scoreDisplay" class="score-display" style="display:none;">
+                Aciertos: <span id="scoreValue">0</span> / <span id="scoreTotal">0</span>
+                &nbsp;|&nbsp; <span id="scorePerfect">0</span> perfectos
+            </div>
+
             <div class="drum-pad-container">
-                <button id="btnKick" class="drum-pad kick-pad">BOMBO (B)</button>
-                <button id="btnSnare" class="drum-pad snare-pad">CAJA (C)</button>
+                <button id="btnKick" class="drum-pad kick-pad">BOMBO<br><small>(B)</small></button>
+                <button id="btnSnare" class="drum-pad snare-pad">CAJA<br><small>(C)</small></button>
             </div>
 
             <button id="startGameButton" style="background-color: var(--accent-color); width: 100%; margin-top: 20px;">
-                 Iniciar Reto
+                Iniciar Reto
             </button>
             <button id="stopGameButton" style="background-color: var(--stop-color); width: 100%; margin-top: 10px; display: none;">
                 Terminar
