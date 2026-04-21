@@ -1,81 +1,95 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.shortcuts import render
+from django.views.generic import TemplateView
 
 from .automata_logic.mealy_machines import RockMealy, ReggaetonMealy, HipHopMealy, CumbiaMealy
-from .automata_logic.aceptador_machines import RockAceptador
+from .automata_logic.aceptador_machines import (
+    RockAceptador, ReggaetonAceptador, HipHopAceptador, CumbiaAceptador,
+)
+
+GENRE_MEALY = {
+    'rock': RockMealy,
+    'reggaeton': ReggaetonMealy,
+    'hiphop': HipHopMealy,
+    'cumbia': CumbiaMealy,
+}
+
+GENRE_ACEPTADOR = {
+    'rock': RockAceptador,
+    'reggaeton': ReggaetonAceptador,
+    'hiphop': HipHopAceptador,
+    'cumbia': CumbiaAceptador,
+}
+
+GENRE_MESSAGES = {
+    'rock': '¡Patrón de Rock reconocido! (bombo-caja alternado)',
+    'reggaeton': '¡Patrón de Reggaetón reconocido! (dembow)',
+    'hiphop': '¡Patrón de Hip-Hop reconocido! (síncopa doble)',
+    'cumbia': '¡Patrón de Cumbia reconocido! (bombo seco + contratiempo)',
+}
+
 
 class GenerateRhythmAPI(APIView):
-    
-    # API View para generar secuencias rítmicas usando el autómata de Mealy correspondiente al género.
-    
-    
     def get(self, request, genre, measures):
-        # selecciona el autómata basado en la URL
-        automata = None
-        if genre.lower() == 'rock':
-            automata = RockMealy()
-        elif genre.lower() == 'reggaeton':
-            automata = ReggaetonMealy()
-        elif genre.lower() == 'hiphop':
-            automata = HipHopMealy()
-        elif genre.lower() == 'cumbia':
-            automata = CumbiaMealy()
+        genre_key = genre.lower()
+        MealyClass = GENRE_MEALY.get(genre_key)
 
-        if not automata:
-            # Si el género no se encuentra, retornar un error 404
+        if not MealyClass:
             return Response(
-                {"error": f"Género '{genre}' no soportado."},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": f"Género '{genre}' no soportado. Válidos: {', '.join(GENRE_MEALY)}."},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
-        # asumimos 16 semicorcheas por compás (measure)
-        try:
-            num_pasos = int(measures) * 16
-        except ValueError:
+        if not (1 <= measures <= 32):
             return Response(
-                {"error": "El número de compases (measures) debe ser un entero."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "El número de compases debe estar entre 1 y 32."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # generar la secuencia llamando a nuestro método
-        secuencia = automata.generar_secuencia(pasos=num_pasos)
-
-        # retornar la secuencia como JSON
+        secuencia = MealyClass().generar_secuencia(pasos=measures * 16)
         return Response({
-            "genre": genre,
+            "genre": genre_key,
             "measures": measures,
             "subdivisions_per_measure": 16,
-            "sequence": secuencia
+            "sequence": secuencia,
         })
+
+
 class ClassifyRhythmAPI(APIView):
+    authentication_classes = []
+    permission_classes = []
+
     def post(self, request):
-        # recibe la secuencia del usuario
-        sequence_str = request.data.get('sequence', '')
-        
-        if not sequence_str:
-            return Response({"error": "Secuencia vacía"}, status=400)
+        sequence = request.data.get('sequence', '')
+        genre_hint = request.data.get('genre', '').lower()
 
-        # aceptador
-        afd_rock = RockAceptador()
-        
-        es_rock = afd_rock.analizar_cadena(sequence_str)
-        
-        # Resultado
-        if es_rock:
-            return Response({
-                "input": sequence_str,
-                "genre_detected": "Rock",
-                "message": "¡Patrón de Rock reconocido!"
-            })
+        if not sequence:
+            return Response({"error": "Secuencia vacía."}, status=status.HTTP_400_BAD_REQUEST)
+
+        genres_to_check = (
+            [genre_hint] if genre_hint in GENRE_ACEPTADOR else list(GENRE_ACEPTADOR)
+        )
+
+        results = {g: GENRE_ACEPTADOR[g]().analizar_cadena(sequence) for g in genres_to_check}
+        detected = [g for g, match in results.items() if match]
+
+        if len(detected) == 1:
+            message = GENRE_MESSAGES[detected[0]]
+            genre_detected = detected[0]
+        elif detected:
+            message = "Múltiples patrones detectados."
+            genre_detected = detected
         else:
-             return Response({
-                "input": sequence_str,
-                "genre_detected": "Desconocido",
-                "message": "No coincide con el patrón de Rock básico."
-            })    
-class AppView(APIView):
+            message = "No coincide con ningún patrón conocido."
+            genre_detected = "Desconocido"
 
-    def get(self, request):
-        return render(request, 'ritmos/index.html')
+        return Response({
+            "results": results,
+            "genre_detected": genre_detected,
+            "message": message,
+        })
+
+
+class AppView(TemplateView):
+    template_name = 'ritmos/index.html'
